@@ -1,4 +1,3 @@
-
 ### Summary
 ## Biofuel supply chain
 # 2 step process
@@ -47,16 +46,7 @@ price_methanol = 1.5 # (Euro per liter)
 price_petrol_diesel = 1 # (Euro per liter)
 
 
-
-# TODO: What ratio is petrol disel to we need for refined biodisel???
-
 ## Crops
-
-
-
-
-
-
 # soybeans, sunflower seeds, cotton seeds
 crop_area = 1_600 # ha
 crop_water_limit = 5_000 # Mli
@@ -104,4 +94,3 @@ println("primal_status: ", primal_status(model))
 println("objective_value: ", objective_value(model))
 println("x: ", value.(x))
 println("y: ", value.(y))
-
