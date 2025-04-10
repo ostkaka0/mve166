@@ -79,10 +79,10 @@ y = [@variable(model, lower_bound=0) for i in product_count]
 @constraint(model, sum(y) >= product_demand)
 
 # Constraint between x and y: We can only make so much of each product from the biodiesel
-@constraint(model, sum(y .* product_biodiesel_ratios) <= sum(x .* crop_yields * 0.9))
+@constraint(model, sum(y .* product_biodiesel_ratios) <= sum(x .* crop_yields .* crop_oil_contents .* 0.9))
 
 sold = sum(y .* (product_prices .* (1 .- product_taxes)))
-cost_methanol = price_methanol * 0.2 * sum(x .* crop_yields)
+cost_methanol = price_methanol * 0.2 * sum(x .* crop_yields .* crop_oil_contents)
 cost_petrol_diesel = price_petrol_diesel .* sum(y .* product_petrol_diesel_ratios) 
 cost = cost_methanol + cost_petrol_diesel
 
