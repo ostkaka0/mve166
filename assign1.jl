@@ -1,7 +1,7 @@
 ### Summary
 ## Biofuel supply chain
 # 2 step process
-# extraction: seeds + ? -> vegtable oil 
+# extraction: seeds -> vegtable oil (calculated with crop_yields)
 # transesterification: vegrable oil + methanol -> biodiesel
 #   0.9l biodiesel <- 1l veetable oil, 0.2l methanol
 # later: refining: biodiesel + petrol diesel -> refined biodiesel
@@ -56,34 +56,34 @@ crop_water_demands = [5.0, 4.2, 1.0] # Ml/ha
 crop_oil_contents = [0.178, 0.216, 0.433] # l/kg
 
 ## Final products: B5, B30, B100
-product_demand = 280_000
-product_count = 3
-product_biodiesel_ratios = [0.05, 0.3, 1.0]
-product_petrol_diesel_ratios = 1.0 .- product_biodiesel_ratios
-product_prices = [1.43, 1.29, 1.16]
-product_taxes = [0.20, 0.05, 0]
+prod_demand = 280_000
+prod_count = 3
+prod_biodiesel_ratios = [0.05, 0.3, 1.0]
+prod_petrol_diesel_ratios = 1.0 .- prod_biodiesel_ratios
+prod_prices = [1.43, 1.29, 1.16]
+prod_taxes = [0.20, 0.05, 0]
 
 
 using JuMP, Clp
 
 model = Model(Clp.Optimizer)
 @variable(model, x[1:crop_count], lower_bound=0)
-@variable(model, y[1:product_count], lower_bound=0)
+@variable(model, y[1:prod_count], lower_bound=0)
 
 # Crop constraints
 @constraint(model, sum(x) <= crop_area)
 @constraint(model, sum(x .* crop_water_demands) <= crop_water_limit)
 
 # Product constraints
-@constraint(model, sum(y .* product_petrol_diesel_ratios) <= petrol_diesel_limit)
-@constraint(model, sum(y) >= product_demand)
+@constraint(model, sum(y .* prod_petrol_diesel_ratios) <= petrol_diesel_limit)
+@constraint(model, sum(y) >= prod_demand)
 
 # Constraint between x and y: We can only make so much of each product from the biodiesel
-@constraint(model, sum(y .* product_biodiesel_ratios) <= sum(x .* crop_yields .* crop_oil_contents .* 0.9))
+@constraint(model, sum(y .* prod_biodiesel_ratios) <= sum(x .* crop_yields .* crop_oil_contents .* 0.9))
 
-sold = sum(y .* (product_prices .* (1 .- product_taxes)))
+sold = sum(y .* (prod_prices .* (1 .- prod_taxes)))
 cost_methanol = price_methanol * 0.2 * sum(x .* crop_yields .* crop_oil_contents)
-cost_petrol_diesel = price_petrol_diesel .* sum(y .* product_petrol_diesel_ratios) 
+cost_petrol_diesel = price_petrol_diesel .* sum(y .* prod_petrol_diesel_ratios) 
 cost = cost_methanol + cost_petrol_diesel
 
 @objective(model, Max, sold - cost)
