@@ -51,7 +51,7 @@ price_petrol_diesel = 1 # (Euro per liter)
 crop_area = 1_600 # ha
 crop_water_limit = 5_000 # Mli
 crop_count = 3
-crop_yields = [2.6, 1.4, 0.9] # t/ha
+crop_yields = 1000.0 .* [2.6, 1.4, 0.9] # l/ha
 crop_water_demands = [5.0, 4.2, 1.0] # Ml/ha
 crop_oil_contents = [0.178, 0.216, 0.433] # l/kg
 
@@ -60,15 +60,15 @@ product_demand = 280_000
 product_count = 3
 product_biodiesel_ratios = [0.05, 0.3, 1.0]
 product_petrol_diesel_ratios = 1.0 .- product_biodiesel_ratios
-product_prices = [1.43, 2.29, 1.16]
+product_prices = [1.43, 1.29, 1.16]
 product_taxes = [0.20, 0.05, 0]
 
 
 using JuMP, Clp
 
 model = Model(Clp.Optimizer)
-x = [@variable(model, lower_bound=0) for i in crop_count]
-y = [@variable(model, lower_bound=0) for i in product_count]
+@variable(model, x[1:crop_count], lower_bound=0)
+@variable(model, y[1:product_count], lower_bound=0)
 
 # Crop constraints
 @constraint(model, sum(x) <= crop_area)
