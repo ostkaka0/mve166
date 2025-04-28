@@ -36,6 +36,7 @@ using JuMP, Clp
 arg = length(ARGS) > 0 ? ARGS[1] : ""
 
 
+
 ### Data:
 petrol_diesel_limit = 150_000 # Liters of available petrol disel
 ## price (Euro per liter)
@@ -78,6 +79,8 @@ end
 
 ### Model:
 model = Model(Clp.Optimizer)
+# println(typeof(backend(model)))
+# exit()
 @variable(model, x[1:crop_count], lower_bound=0) # ha
 @variable(model, y[1:prod_count], lower_bound=0) # l
 if arg == "a1"
@@ -153,7 +156,8 @@ end
 
 if arg == "b"
     println("# 3. (b)")
-    println("constraint_petrol_diesel: ", constraint_petrol_diesel)
-    println("constraint_water: ", constraint_water)
-    println("constraint_area: ", constraint_area)
+    println("dual of constraint_petrol_diesel: ", dual(constraint_petrol_diesel))
+    println("dual of constraint_water: ", dual(constraint_water))
+    println("dual of constraint_area: ", dual(constraint_area))
+    println("dual of constraint_biodiesel: ", dual(constraint_biodiesel))
 end
