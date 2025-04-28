@@ -36,6 +36,7 @@ using JuMP, Clp
 arg = length(ARGS) > 0 ? ARGS[1] : ""
 
 
+
 ### Data:
 petrol_diesel_limit = 150_000 # Liters of available petrol disel
 if arg == "b1"
@@ -84,9 +85,20 @@ if arg == "e"
     prod_taxes = [0.12, 0.05, 0.0]
 end
 
+## For (h) we need additinoal taxes:
+tax_water = 15.0 # €/Ml
+tax_petrol_diesel = 0.3
+if arg == "g"
+    price_petrol_diesel *= 1 + tax_petrol_diesel
+end 
+# co2_from_methanol = 1086.4 # kg/l # https://www.quora.com/How-much-CO2-is-produced-by-burning-1-liter-of-methanol
+# co2_from_petrol_diesel
+# tax_co2
 
 ### Model:
 model = Model(Clp.Optimizer)
+# println(typeof(backend(model)))
+# exit()
 @variable(model, x[1:crop_count], lower_bound=0) # ha
 @variable(model, y[1:prod_count], lower_bound=0) # l
 if arg == "a1"
@@ -126,6 +138,9 @@ costs = cost_methanol .+ cost_petrol_diesel # Euro + Euro = Euro
 revenues     = y .* prod_prices       # l * (Euro/l) = Euro
 taxes        = revenues .* prod_taxes # Euro
 profit = sum(revenues) - sum(taxes) - costs # Euro - Euro - Euro = Euro
+if arg == "g"
+    profit -= tax_water * water_usage
+end
 
 if arg == "a1" || arg == "a2" || arg == "a3"
     @objective(model, Min, a_var)
@@ -165,5 +180,6 @@ if startswith(arg, "b")
     println("dual(constraint_petrol_diesel): ", dual(constraint_petrol_diesel))
     println("dual(constraint_water): ", dual(constraint_water))
     println("dual(constraint_area): ", dual(constraint_area))
+    println("dual(constraint_biodiesel): ", dual(constraint_biodiesel))
     println("profit: ", value(profit))
 end
