@@ -76,6 +76,15 @@ if arg == "e"
     prod_taxes = [0.12, 0.05, 0.0]
 end
 
+## For (h) we need additinoal taxes:
+tax_water = 0.01 # €/l
+tax_petrol_diesel = 0.33
+if arg == "g"
+    price_petrol_diesel *= 1 + tax_petrol_diesel
+end 
+# co2_from_methanol = 1086.4 # kg/l # https://www.quora.com/How-much-CO2-is-produced-by-burning-1-liter-of-methanol
+# co2_from_petrol_diesel
+# tax_co2
 
 ### Model:
 model = Model(Clp.Optimizer)
@@ -120,6 +129,9 @@ costs = cost_methanol .+ cost_petrol_diesel # Euro + Euro = Euro
 revenues     = y .* prod_prices       # l * (Euro/l) = Euro
 taxes        = revenues .* prod_taxes # Euro
 profit = sum(revenues) - sum(taxes) - costs # Euro - Euro - Euro = Euro
+if arg == "g"
+    profit -= tax_water * water_usage
+end
 
 if arg == "a1" || arg == "a2" || arg == "a3"
     @objective(model, Min, a_var)
