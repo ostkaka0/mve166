@@ -33,19 +33,26 @@
 
 using JuMP, Clp
 
+arg = length(ARGS) > 0 ? ARGS[1] : ""
+
 
 ### Data:
 petrol_diesel_limit = 150_000 # Liters of available petrol disel
 ## price (Euro per liter)
 price_methanol = 1.5 # (Euro/l)
 price_petrol_diesel = 1 # (Euro/l)
-# price_petrol_diesel = 1.2
+if arg == "d"
+    price_petrol_diesel = 1.2
+end
 
 ## Crops: soybeans, sunflower seeds, cotton seeds
 crop_total_area = 1_600 # ha
 crop_total_water_limit = 5_000 # Ml
 crop_count = 3
 crop_yields = 1000.0 .* [2.6, 1.4, 0.9] # 1000 * t/ha = kg/ha
+if arg == "c" # Because the big differentiating factor that makes sunflower seeds less profitable than soybeans is the low yield, other than that the numbers are either similar or better for sunflower seeds than soybeans.
+    crop_yields = 1000.0 .* [2.6, 2.1, 0.9]
+end
 crop_water_demands = [5.0, 4.2, 1.0] # Ml/ha
 crop_oil_contents = [0.178, 0.216, 0.433] # l/kg
 
@@ -56,12 +63,22 @@ prod_biodiesel_ratios = [0.05, 0.3, 1.0]
 prod_petrol_diesel_ratios = 1.0 .- prod_biodiesel_ratios
 prod_prices = [1.43, 1.29, 1.16] # Euro/l
 prod_taxes = [0.20, 0.05, 0.0]
+if arg == "e"
+    prod_taxes = [0.12, 0.05, 0.0]
+end
 
 
 ### Model:
 model = Model(Clp.Optimizer)
 @variable(model, x[1:crop_count], lower_bound=0) # ha
 @variable(model, y[1:prod_count], lower_bound=0) # l
+if arg == "a1"
+    petrol_diesel_limit = @variable(model, a_var)
+elseif arg == "a2"
+    crop_total_water_limit = @variable(model, a_var)
+elseif arg == "a3"
+    crop_total_area = @variable(model, a_var)
+end
 
 water_usage         = sum(x .* crop_water_demands) # ha*(Ml/ha) = Ml 
 # Extraction of vegtable oils from seeds
@@ -76,14 +93,14 @@ petrol_diesel_usage = sum(y .* prod_petrol_diesel_ratios) # l
 @assert all(isapprox.(prod_biodiesel_ratios .+ prod_petrol_diesel_ratios, 1.0)) # They must add up to 1
 
 # Crop constraints
-@constraint(model, sum(x) <= crop_total_area) # ha <= ha
-@constraint(model, water_usage <= crop_total_water_limit) # Ml <= Ml
+constraint_area = @constraint(model, sum(x) <= crop_total_area) # ha <= ha
+constraint_water = @constraint(model, water_usage <= crop_total_water_limit) # Ml <= Ml
 # Product constraints
 # @constraint(model, sum(y) == prod_total_demand) # l == l
-@constraint(model, sum(y) >= prod_total_demand) # l >= l
-@constraint(model, petrol_diesel_usage <= petrol_diesel_limit) # l <= l
+constraint_demand = @constraint(model, sum(y) >= prod_total_demand) # l >= l
+constraint_petrol_diesel = @constraint(model, petrol_diesel_usage <= petrol_diesel_limit) # l <= l
 # Constraint between x and y: We can only make so much of each product from the biodiesel
-@constraint(model, biodiesel_usage <= biodiesel_produced) # l <= l
+constraint_biodiesel = @constraint(model, biodiesel_usage <= biodiesel_produced) # l <= l
 
 cost_methanol = price_methanol * methanol_usage # (Euro/l) * l = Euro
 cost_petrol_diesel = price_petrol_diesel * petrol_diesel_usage # (Euro/l) * l = Euro
@@ -93,7 +110,12 @@ revenues     = y .* prod_prices       # l * (Euro/l) = Euro
 taxes        = revenues .* prod_taxes # Euro
 profit = sum(revenues) - sum(taxes) - costs # Euro - Euro - Euro = Euro
 
-@objective(model, Max, profit)
+if arg == "a1" || arg == "a2" || arg == "a3"
+    @objective(model, Min, a_var)
+else
+    @objective(model, Max, profit)
+end
+println("Model: ", model)
 optimize!(model)
 
 println("Termination status: ", termination_status(model))
@@ -115,3 +137,15 @@ println("costs: ", value(costs))
 println("revenue: ", value(sum(revenues)))
 println("tax: ", value(sum(taxes)))
 println("profit: ", value(profit))
+
+if arg == "a1" || arg == "a2" || arg == "a3"
+    println("# 3. (a)")
+    println("task a variable: ", value(a_var))
+end
+
+if arg == "b"
+    println("# 3. (b)")
+    println("constraint_petrol_diesel: ", constraint_petrol_diesel)
+    println("constraint_water: ", constraint_water)
+    println("constraint_area: ", constraint_area)
+end
