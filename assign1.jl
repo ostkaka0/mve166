@@ -54,6 +54,14 @@ if arg == "c" # Because the big differentiating factor that makes sunflower seed
     crop_yields = 1000.0 .* [2.6, 2.1, 0.9]
 end
 crop_water_demands = [5.0, 4.2, 1.0] # Ml/ha
+if arg == "f1"
+    crop_water_demands .+= 0.1
+    println("crop_water_demands: ", crop_water_demands)
+end
+if arg == "f2"
+    crop_water_demands[1] += 0.1
+    println("crop_water_demands: ", crop_water_demands)
+end
 crop_oil_contents = [0.178, 0.216, 0.433] # l/kg
 
 ## Final products: B5, B30, B100
