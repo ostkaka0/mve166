@@ -38,6 +38,9 @@ arg = length(ARGS) > 0 ? ARGS[1] : ""
 
 ### Data:
 petrol_diesel_limit = 150_000 # Liters of available petrol disel
+if arg == "b1"
+    petrol_diesel_limit += 1
+end
 ## price (Euro per liter)
 price_methanol = 1.5 # (Euro/l)
 price_petrol_diesel = 1 # (Euro/l)
@@ -47,7 +50,13 @@ end
 
 ## Crops: soybeans, sunflower seeds, cotton seeds
 crop_total_area = 1_600 # ha
+if arg == "b3"
+    crop_total_area += 1
+end
 crop_total_water_limit = 5_000 # Ml
+if arg == "b2"
+    crop_total_water_limit += 1
+end
 crop_count = 3
 crop_yields = 1000.0 .* [2.6, 1.4, 0.9] # 1000 * t/ha = kg/ha
 if arg == "c" # Because the big differentiating factor that makes sunflower seeds less profitable than soybeans is the low yield, other than that the numbers are either similar or better for sunflower seeds than soybeans.
@@ -146,14 +155,15 @@ println("revenue: ", value(sum(revenues)))
 println("tax: ", value(sum(taxes)))
 println("profit: ", value(profit))
 
-if arg == "a1" || arg == "a2" || arg == "a3"
+if startswith(arg, "a")
     println("# 3. (a)")
     println("task a variable: ", value(a_var))
 end
 
-if arg == "b"
+if startswith(arg, "b")
     println("# 3. (b)")
-    println("constraint_petrol_diesel: ", constraint_petrol_diesel)
-    println("constraint_water: ", constraint_water)
-    println("constraint_area: ", constraint_area)
+    println("dual(constraint_petrol_diesel): ", dual(constraint_petrol_diesel))
+    println("dual(constraint_water): ", dual(constraint_water))
+    println("dual(constraint_area): ", dual(constraint_area))
+    println("profit: ", value(profit))
 end
