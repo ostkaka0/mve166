@@ -3,10 +3,11 @@ using JuMP
 #using Cbc
 using Gurobi
 using SparseArrays
+using Plots
 
 arg = length(ARGS) > 0 ? ARGS[1] : ""
 
-if arg == "1a"
+if arg == "1a" || startswith(arg, "2")
     include("as_dat_large.jl")
 else
     include("as_dat_small.jl")
@@ -14,6 +15,9 @@ end
 
 if arg == "1a"
     T = 125
+end
+if startswith(arg, "2")
+    # d = 20
 end
 
 println("# Data:")
@@ -38,11 +42,23 @@ set_optimizer(m, Gurobi.Optimizer)
 # See http://www.gurobi.com/documentation/8.1/refman/parameters.html for a
 # complete list of valid parameters
 # """
+
+function plot_x(x, i)
+    x_val = sparse(value.(x.data))
+    rows, cols = findnz(x_val)
+    scatter(cols, rows)
+    println("x_val_$(arg)_$(i).png")
+    savefig("x_val_$(arg)_$(i).png")
+end
+    
+
 if arg == "1a"
     println("### 1a (i)")
+    set_silent(m)
     optimize!(m)
     obj_i = objective_value(m)
     time_i = solve_time(m)
+    plot_x(x, 1)
     
     
     println("### 1a (ii)")
@@ -50,6 +66,7 @@ if arg == "1a"
     optimize!(m)
     obj_ii = objective_value(m)
     time_ii = solve_time(m)
+    plot_x(x, 2)
     
     println("### 1a (iii)")
     # unset_binary.(x)
@@ -57,6 +74,7 @@ if arg == "1a"
     optimize!(m)
     obj_iii = objective_value(m)
     time_iii = solve_time(m)
+    plot_x(x, 3)
     
     println("time_i = $time_i")
     println("time_ii = $time_ii")
@@ -69,6 +87,7 @@ elseif arg == "1b"
     optimize!(m)
     obj_i = objective_value(m)
     time_i = solve_time(m)
+    plot_x(x, 1)
     
     println("### 1b (ii)")
     unset_binary.(x)
@@ -76,12 +95,14 @@ elseif arg == "1b"
     optimize!(m)
     obj_ii = objective_value(m)
     time_ii = solve_time(m)
+    plot_x(x, 2)
     
     println("### 1b (iii)")
     add_cut_to_small(m)
     optimize!(m)
     obj_iii = objective_value(m)
     time_iii = solve_time(m)
+    plot_x(x, 3)
 
     println("time_i = $time_i")
     println("time_ii = $time_ii")
@@ -90,6 +111,67 @@ elseif arg == "1b"
     println("obj_i - obj_ii = ", obj_i - obj_ii)
     println("obj_ii - obj_iii = ", obj_ii - obj_iii)
     println("obj_i - obj_iii = ", obj_i - obj_iii)
+elseif arg == "2a"
+    println("### 2a")
+    set_silent(m)
+    t = zeros(Float64, 16)
+    t_x = 50:10:200
+    plot(t_x, t .+ rand(16))
+    # plot(rand(10))
+    savefig("test_fig.png")
+    optimize!(m)
+    for i in 5:20
+        T = i*10
+        # Update d and c to use new T
+        d = ones(1,T)*20      #cost of a maintenance occasion
+        c = [34 25 14 21 16  3 10  5  7 10]'*ones(1,T)     #costs of new components
+        
+        m, x, z = build_model(;relax_x=false, relax_z=false)
+        set_optimizer(m, Gurobi.Optimizer)
+        set_optimizer_attributes(m, "MIPGap" => 2e-2, "TimeLimit" => 3600)
+        set_silent(m)
+        unset_binary.(x)
+        println("# T = $T:")
+        optimize!(m)
+        obj_i = objective_value(m)
+        time_i = solve_time(m)
+        t[i-4] = time_i
+        println("t: $time_i")
+    end
+    plot(t_x, t, title="hello", xlabel="T", ylabel="Time (s)", show=true)
+    savefig("2a_time.png")
+elseif arg == "2b"
+    println("### 2b")
+    set_silent(m)
+    t = zeros(Float64, 14)
+    t_x = 50:50:700
+    plot(t_x, t .+ rand(14))
+    # plot(rand(10))
+    savefig("test_fig.png")
+    optimize!(m)
+    for i in 1:14
+        T = i*50
+        # Update d and c to use new T
+        d = ones(1,T)*20      #cost of a maintenance occasion
+        c = [34 25 14 21 16  3 10  5  7 10]'*ones(1,T)     #costs of new components
+        
+        m, x, z = build_model(;relax_x=false, relax_z=false)
+        set_optimizer(m, Gurobi.Optimizer)
+        set_optimizer_attributes(m, "MIPGap" => 2e-2, "TimeLimit" => 3600)
+        set_silent(m)
+        unset_binary.(x)
+        unset_binary.(z)
+        println("# T = $T:")
+        optimize!(m)
+        obj_i = objective_value(m)
+        time_i = solve_time(m)
+        t[i-0] = time_i
+        println("t: $time_i")
+    end
+    plot(t_x, t, title="hello", xlabel="T", ylabel="Time (s)", show=true)
+    savefig("2b_time.png")
+else
+    optimize!(m)
 end
 """
 Some useful output & functions
@@ -105,6 +187,11 @@ Some useful output & functions
 
 x_val = sparse(value.(x.data))
 z_val = sparse(value.(z))
+
+
+# heatmap(Array(x_val))
+
+println(x_val.colptr)
 
 println("x  = ")
 println(x_val)
