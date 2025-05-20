@@ -52,8 +52,9 @@ function plot_x(x, i)
 end
     
 if startswith(arg, "1")
-    m, x, z = build_model(;relax_x=false, relax_z=false)
+    global m, x, z = build_model(;relax_x=false, relax_z=false)
     set_optimizer(m, Gurobi.Optimizer)
+    set_silent(m)
 
     if arg == "1a"
         println("### 1a (i)")
@@ -114,10 +115,10 @@ if startswith(arg, "1")
         println("obj_i - obj_ii = ", obj_i - obj_ii)
         println("obj_ii - obj_iii = ", obj_ii - obj_iii)
         println("obj_i - obj_iii = ", obj_i - obj_iii)
+    end
 
 elseif startswith(arg, "2")
     println("### $(arg)")
-    set_silent(m)
     t_vals = Float64[]
     # T_vals = 50:10:200
     # plot(t_x, t .+ rand(16))
@@ -125,12 +126,12 @@ elseif startswith(arg, "2")
 
     T_range = (arg == "2b") ? (50:25:700) : (50:25:200)
     # for i in i range
-    for (T_idx, T) in enumerate(i_range)
+    for (T_idx, T) in enumerate(T_range)
         # Update d and c to use new T
         d = ones(1,T)*20      #cost of a maintenance occasion
         c = [34 25 14 21 16  3 10  5  7 10]'*ones(1,T)     #costs of new components
     
-        m, x, z = build_model(;relax_x=false, relax_z=false)
+        global m, x, z = build_model(;relax_x=false, relax_z=false)
         set_optimizer(m, Gurobi.Optimizer)
         set_optimizer_attributes(m, "MIPGap" => 2e-2, "TimeLimit" => 3600)
         set_silent(m)
@@ -150,39 +151,39 @@ elseif startswith(arg, "2")
     plot(T_range, t_vals, title="hello", xlabel="T", ylabel="Time (s)", show=true)
     savefig("$(arg)_time.png")
 
-    elseif arg == "2b"
-        println("### 2b")
-        set_silent(m)
-        t = zeros(Float64, 14)
-        t_x = 50:50:700
-        plot(t_x, t .+ rand(14))
-        # plot(rand(10))
-        savefig("test_fig.png")
-        optimize!(m)
-        for i in 1:14
-            T = i*50
-            # Update d and c to use new T
-            d = ones(1,T)*20      #cost of a maintenance occasion
-            c = [34 25 14 21 16  3 10  5  7 10]'*ones(1,T)     #costs of new components
+    # elseif arg == "2b"
+    #     println("### 2b")
+    #     set_silent(m)
+    #     t = zeros(Float64, 14)
+    #     t_x = 50:50:700
+    #     plot(t_x, t .+ rand(14))
+    #     # plot(rand(10))
+    #     savefig("test_fig.png")
+    #     optimize!(m)
+    #     for i in 1:14
+    #         T = i*50
+    #         # Update d and c to use new T
+    #         d = ones(1,T)*20      #cost of a maintenance occasion
+    #         c = [34 25 14 21 16  3 10  5  7 10]'*ones(1,T)     #costs of new components
         
-            m, x, z = build_model(;relax_x=false, relax_z=false)
-            set_optimizer(m, Gurobi.Optimizer)
-            set_optimizer_attributes(m, "MIPGap" => 2e-2, "TimeLimit" => 3600)
-            set_silent(m)
-    T     unset_binary.(x)
-            unset_binary.(z)
-            println("# T = TT:")
-            optimize!(m)
-            obj_i = objective_value(m)
-            time_i = solve_time(m)
-            t[i-0] = time_i
-            println("t: $time_i")
-        end
-        plot(t_x, t, title="hello", xlabel="T", ylabel="Time (s)", show=true)
-        savefig("2b_time.png")
-    end
+    #         m, x, z = build_model(;relax_x=false, relax_z=false)
+    #         set_optimizer(m, Gurobi.Optimizer)
+    #         set_optimizer_attributes(m, "MIPGap" => 2e-2, "TimeLimit" => 3600)
+    #         set_silent(m)
+    #         unset_binary.(x)
+    #         unset_binary.(z)
+    #         println("# T = TT:")
+    #         optimize!(m)
+    #         obj_i = objective_value(m)
+    #         time_i = solve_time(m)
+    #         t[i-0] = time_i
+    #         println("t: $time_i")
+    #     end
+    #     plot(t_x, t, title="hello", xlabel="T", ylabel="Time (s)", show=true)
+    #     savefig("2b_time.png")
+    # end
 else
-    m, x, z = build_model(;relax_x=false, relax_z=false)
+    global m, x, z = build_model(;relax_x=false, relax_z=false)
     set_optimizer(m, Gurobi.Optimizer)
     optimize!(m)
 end
