@@ -4,6 +4,7 @@ using JuMP
 using Gurobi
 using SparseArrays
 using Plots
+using Printf
 
 arg = length(ARGS) > 0 ? ARGS[1] : ""
 
@@ -14,10 +15,7 @@ else
 end
 
 if arg == "1a"
-    T = 125
-end
-if startswith(arg, "2")
-    # d = 20
+    global T = 125
 end
 
 println("# Data:")
@@ -28,7 +26,11 @@ println("c:", summary(c))
 println("U:", U)
 println()
 
-include("as_mod.jl")
+if startswith(arg, "3")
+    include("as_mod3.jl")
+else
+    include("as_mod.jl")
+end
 # m, x, z = build_model(;relax_x=false, relax_z=false)
 # set_optimizer(m, Gurobi.Optimizer)
 # set_optimizer_attributes(m, "MIPGap" => 2e-2, "TimeLimit" => 3600)
@@ -117,40 +119,47 @@ if startswith(arg, "1")
         println("obj_i - obj_iii = ", obj_i - obj_iii)
     end
 
-elseif startswith(arg, "2")
+elseif startswith(arg, "2") || startswith(arg, "3")
     println("### $(arg)")
     t_vals = Float64[]
-    # T_vals = 50:10:200
-    # plot(t_x, t .+ rand(16))
-    # savefig("test_fig.png")
-
-    T_range = (arg == "2b") ? (50:25:700) : (50:25:200)
-    # for i in i range
-    for (T_idx, T_val) in enumerate(T_range)
-        global T = T_val
-        # Update d and c to use new T
-        global d = ones(1,T)*20      #cost of a maintenance occasion
-        global c = [34 25 14 21 16  3 10  5  7 10]'*ones(1,T)     #costs of new components
+    T_range = (arg == "2b" || arg == "3b") ? (50:10:700) : (50:5:200)
     
-        global m, x, z = build_model(;relax_x=false, relax_z=false)
-        set_optimizer(m, Gurobi.Optimizer)
-        set_optimizer_attributes(m, "MIPGap" => 2e-2, "TimeLimit" => 3600)
-        set_silent(m)
-        unset_binary.(x)
-        if arg == "2b"
-            println("Relaxing integer requirement for z")
-            unset_binary.(z)
+    # Sava times to file whilst doing the calculations
+    open("$(arg)_time_data.txt", "w") do io
+        @printf(io, "#T, time")
+        for (T_idx, T_val) in enumerate(T_range)
+            # Update globals. d and c must be updated based on new T
+            global T = T_val
+            global d = ones(1,T)*20      #cost of a maintenance occasion
+            global c = [34 25 14 21 16  3 10  5  7 10]'*ones(1,T)     #costs of new components
+    
+            # Build model and optimize
+            global m, x, z = build_model(;relax_x=false, relax_z=false)
+            set_optimizer(m, Gurobi.Optimizer)
+            set_optimizer_attributes(m, "MIPGap" => 2e-2, "TimeLimit" => 3600)
+            set_silent(m)
+            unset_binary.(x)
+            if arg == "2b"
+                println("Relaxing integer requirement for z")
+                unset_binary.(z)
+            end
+            println("# T = $T:")
+            optimize!(m)
+
+            obj_i = objective_value(m)
+            time_i = solve_time(m)
+            push!(t_vals, time_i)
+            # push!(T_vals, T)
+            println("t: $time_i")
+
+            # Print to file
+            @printf(io, "%.2f, %.2f\n", T_val, time_i)
         end
-        println("# T = $T:")
-        optimize!(m)
-        obj_i = objective_value(m)
-        time_i = solve_time(m)
-        push!(t_vals, time_i)
-        # push!(T_vals, T)
-        println("t: $time_i")
-    end
+    end # open(...)
+    # Save plot to a .png
     plot(T_range, t_vals, xlabel="T", ylabel="Time (s)", show=true, yscale=:log10, legend=:none)
     savefig("$(arg)_time.png")
+    
 
     # elseif arg == "2b"
     #     println("### 2b")

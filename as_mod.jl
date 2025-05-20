@@ -2,7 +2,6 @@
   Construct and returns the model of this assignment.
 """
 function build_model(;relax_x::Bool = false, relax_z::Bool = false)
-  println("slkdfjsdlkf", T)
   #Components - the set of components
   #T - the number of time steps in the model
   #d[1,..,T] - cost of a maintenance occasion
