@@ -19,17 +19,18 @@ function build_model(;relax_x::Bool = false, relax_z::Bool = false)
     sum(c[i, s]*x[i, s, t] for i in Components, s in 1:T, t in 1:(T+1)) +
     sum(d[t]*z[t] for t in 1:T))
 
-  CorrectIntervals = @constraint(m,
-    [i in Components, t in 1:T+1],
+  MatchingIntervals = @constraint(m,
+    [i in Components, t in 1:T],
     sum(x[i, s, t] for s in 0:t-1) == sum(x[i, t, r] for r in t+1:T+1) 
   )
-    
-  ReplaceWithinLife = @constraint(m,
-    [i in Components, ell in 0:(T-U[i]); T >= U[i]],
-    sum(x[i,0,t] for t in (ell .+ (1:U[i]))) == 1)
-
-  ReplaceOnlyAtMaintenance = @constraint(m, [i in Components, t in 1:T],
-  sum(x[i,s,t] for s in 0:t-1) <= z[t])
+  MustHaveInitialIntervals = @constraint(m,
+    [i in Components],
+    sum(x[i,0,t] for t in 1:T+1) == 1
+  )
+  ReplaceOnlyAtMaintenance = @constraint(m,
+    [i in Components, t in 1:T],
+    sum(x[i,s,t] for s in 0:t-1) <= z[t]
+  )
 
   return m, x, z
 end

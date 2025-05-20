@@ -123,6 +123,9 @@ elseif startswith(arg, "2") || startswith(arg, "3")
     println("### $(arg)")
     t_vals = Float64[]
     T_range = (arg == "2b" || arg == "3b") ? (50:10:700) : (50:5:200)
+    if arg == "3a"
+        T_range = (50:5:400)
+    end
     
     # Sava times to file whilst doing the calculations
     open("$(arg)_time_data.txt", "w") do io
@@ -196,6 +199,18 @@ else
     global m, x, z = build_model(;relax_x=false, relax_z=false)
     set_optimizer(m, Gurobi.Optimizer)
     optimize!(m)
+    x_val = sparse(value.(x.data))
+    z_val = sparse(value.(z))
+
+
+    # heatmap(Array(x_val))
+
+    println(x_val.colptr)
+
+    println("x  = ")
+    println(x_val)
+    println("z = ")
+    println(z_val)
 end
 """
 Some useful output & functions
@@ -209,18 +224,7 @@ Some useful output & functions
 
 # println(solve_time(m))
 
-x_val = sparse(value.(x.data))
-z_val = sparse(value.(z))
 
-
-# heatmap(Array(x_val))
-
-println(x_val.colptr)
-
-println("x  = ")
-println(x_val)
-println("z = ")
-println(z_val)
 # println("raw x", value.(x.data))
 
 #add_cut_to_small(m)
