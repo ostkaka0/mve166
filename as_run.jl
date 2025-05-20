@@ -14,9 +14,7 @@ else
     include("as_dat_small.jl")
 end
 
-if arg == "1a"
-    global T = 125
-end
+
 
 println("# Data:")
 println("Components:", Components)
@@ -59,6 +57,11 @@ if startswith(arg, "1")
     set_silent(m)
 
     if arg == "1a"
+        # Update globals. d and c must be updated based on new T
+        global T = 125
+        global d = ones(1,T)*20      #cost of a maintenance occasion
+        global c = [34 25 14 21 16  3 10  5  7 10]'*ones(1,T)     #costs of new components
+
         println("### 1a (i)")
         set_silent(m)
         optimize!(m)
@@ -162,39 +165,6 @@ elseif startswith(arg, "2") || startswith(arg, "3")
     # Save plot to a .png
     plot(T_range, t_vals, xlabel="T", ylabel="Time (s)", show=true, yscale=:log10, legend=:none)
     savefig("$(arg)_time.png")
-    
-
-    # elseif arg == "2b"
-    #     println("### 2b")
-    #     set_silent(m)
-    #     t = zeros(Float64, 14)
-    #     t_x = 50:50:700
-    #     plot(t_x, t .+ rand(14))
-    #     # plot(rand(10))
-    #     savefig("test_fig.png")
-    #     optimize!(m)
-    #     for i in 1:14
-    #         T = i*50
-    #         # Update d and c to use new T
-    #         d = ones(1,T)*20      #cost of a maintenance occasion
-    #         c = [34 25 14 21 16  3 10  5  7 10]'*ones(1,T)     #costs of new components
-        
-    #         m, x, z = build_model(;relax_x=false, relax_z=false)
-    #         set_optimizer(m, Gurobi.Optimizer)
-    #         set_optimizer_attributes(m, "MIPGap" => 2e-2, "TimeLimit" => 3600)
-    #         set_silent(m)
-    #         unset_binary.(x)
-    #         unset_binary.(z)
-    #         println("# T = TT:")
-    #         optimize!(m)
-    #         obj_i = objective_value(m)
-    #         time_i = solve_time(m)
-    #         t[i-0] = time_i
-    #         println("t: $time_i")
-    #     end
-    #     plot(t_x, t, title="hello", xlabel="T", ylabel="Time (s)", show=true)
-    #     savefig("2b_time.png")
-    # end
 else
     global m, x, z = build_model(;relax_x=false, relax_z=false)
     set_optimizer(m, Gurobi.Optimizer)
