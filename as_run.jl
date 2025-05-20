@@ -126,10 +126,11 @@ elseif startswith(arg, "2")
 
     T_range = (arg == "2b") ? (50:25:700) : (50:25:200)
     # for i in i range
-    for (T_idx, T) in enumerate(T_range)
+    for (T_idx, T_val) in enumerate(T_range)
+        global T = T_val
         # Update d and c to use new T
-        d = ones(1,T)*20      #cost of a maintenance occasion
-        c = [34 25 14 21 16  3 10  5  7 10]'*ones(1,T)     #costs of new components
+        global d = ones(1,T)*20      #cost of a maintenance occasion
+        global c = [34 25 14 21 16  3 10  5  7 10]'*ones(1,T)     #costs of new components
     
         global m, x, z = build_model(;relax_x=false, relax_z=false)
         set_optimizer(m, Gurobi.Optimizer)
@@ -148,7 +149,7 @@ elseif startswith(arg, "2")
         # push!(T_vals, T)
         println("t: $time_i")
     end
-    plot(T_range, t_vals, title="hello", xlabel="T", ylabel="Time (s)", show=true)
+    plot(T_range, t_vals, xlabel="T", ylabel="Time (s)", show=true, yscale=:log10, legend=:none)
     savefig("$(arg)_time.png")
 
     # elseif arg == "2b"
