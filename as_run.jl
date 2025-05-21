@@ -52,7 +52,7 @@ function plot_x(x, i)
     savefig("x_val_$(arg)_$(i).png")
 end
 
-function fit_line(m, x, y, log_x=false, log_y=false)
+function fit_line(x, y, log_x=false, log_y=false)
     x = log_x ? log.(T) : x
     y = log_y ? log.(T_times) : y
     # 'Solve' s of As = y, using least squares
@@ -61,11 +61,21 @@ function fit_line(m, x, y, log_x=false, log_y=false)
     return s # s[0] is intercept, s[1] is slope
 end
 
-function predict_line(m, x, s, log_x=false, log_y=false)
+function predict_line(x, s, log_x=false, log_y=false)
     xx = log_x ? exp.(x) : x
     y = s[0] + s[1]*xx
     yy = log_y ? exp.(y) : y
     return yy
+end
+
+function plot_line(x, s, log_x=false, log_y=false)
+    y = predict_line(x, s, log_x, log_y)
+    plot!(x, y, label="interp=$(s[0]), slope=$(s[1])")
+end
+
+function fit_and_plot_line(x, y, log_x=false, log_y=false)
+    s = fit_line(x, y, log_x, log_y)
+    plot_line(x, s, log_x, log_y)
 end
 
 function plot_x_model3(x, T)
