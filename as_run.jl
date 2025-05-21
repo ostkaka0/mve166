@@ -50,6 +50,22 @@ function plot_x(x, i)
     println("x_val_$(arg)_$(i).png")
     savefig("x_val_$(arg)_$(i).png")
 end
+
+function fit_line(m, x, y, log_x=false, log_y=false)
+    x = log_x ? log.(T) : x
+    y = log_y ? log.(T_times) : y
+    # 'Solve' s of As = y, using least squares
+    A = [ones(length(x)) x]
+    s = A \ y
+    return s # s[0] is intercept, s[1] is slope
+end
+
+function predict_line(m, x, s, log_x=false, log_y=false)
+    xx = log_x ? exp.(x) : x
+    y = s[0] + s[1]*xx
+    yy = log_y ? exp.(y) : y
+    return yy
+end
     
 if startswith(arg, "1")
     global m, x, z = build_model(;relax_x=false, relax_z=false)
