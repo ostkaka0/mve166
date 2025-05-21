@@ -61,6 +61,22 @@ function fit_line(x, y, log_x=false, log_y=false)
     return s # s[0] is intercept, s[1] is slope
 end
 
+function line_function_to_str(s, x_name, log_x=false, log_y=false)
+    if log_x
+        if log_y
+            return "exp($(s[0])) * $(xname)^$(s[1])"
+        else
+            return "$(s[0]) * $(xname) * log($(s[1]))"
+        end
+    else
+        if log_y
+            return "exp($(s[0]) + $(xname) * $(s[1]))"
+        else
+            return "$(s[0]) + $(xname) * $(s[1])"
+        end
+    end
+end
+
 function predict_line(x, s, log_x=false, log_y=false)
     xx = log_x ? exp.(x) : x
     y = s[0] + s[1]*xx
