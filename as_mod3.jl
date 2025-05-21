@@ -24,27 +24,33 @@ function build_model(;relax_x::Bool = false, relax_z::Bool = false)
   # where n is last(Components) = length(Components)
   n = last(Components)
   @assert last(Components) == length(Components)
-  # We have to use an OffsetArray to allow zero-indexing on 2nd argument.
-  cc = OffsetArray(zeros(n, T+1, T+1), Components, 0:T, 1:T+1)
+  
+  big_const = T*(maximum(d) + n*maximum(c)) + 1
+  println("big_const=$(big_const)")
+  # # We have to use an OffsetArray to allow zero-indexing on 2nd argument.
+  # cc = OffsetArray(zeros(n, T+1, T+1), Components, 0:T, 1:T+1)
   # cc = OffsetArray(zeros(Components, T+1, T+1), 1:Components, 0:T, 1:T+1)
-
-  for i in Components
-    for s in 0:T
-      for t in s+1:T+1
-        if t-s > U[i]
-          cc[i, s, t] = T*(maximum(d) + n*maximum(c)) + 1
-        elseif t != T+1
-          # Note that c[i, T+1] doesn't exist, so we let cc[i, s, T+1] it stay at zero through the the ifelse above
-          cc[i, s, t] = c[i, t]
-        end
-      end
-    end
-  end
+  # for i in Components
+  #   for s in 0:T
+  #     for t in s+1:T+1
+  #       if t-s > U[i]
+  #         cc[i, s, t] = T*(maximum(d) + n*maximum(c)) + 1
+  #       elseif t != T+1
+  #         # Note that c[i, T+1] doesn't exist, so we let cc[i, s, T+1] it stay at zero through the the ifelse above
+  #         cc[i, s, t] = c[i, t]
+  #       end
+  #     end
+  #   end
+  # end
       
 
   # Outdated comment: # s in 1:T instead of 0:T because maintenance is free(and mandatory) at time 0. The paper had 0:T however.
+    # sum(cc[i, s, t]*x[i, s, t] for i in Components, s in 0:T, t in s+1:T+1) +
   cost = @objective(m, Min,
-    sum(cc[i, s, t]*x[i, s, t] for i in Components, s in 0:T, t in s+1:T+1) +
+    # sum(c[i, t]*x[i, s, t] for i in Components, s in 0:T, t in s+1:s+U[i] if t <= T) +
+    # sum(big_const*x[i, s, t] for i in Components, s in 0:T, t in s+U[i]+1:T) +
+    sum(c[i, t]  *x[i, s, t] for i in Components, s in 0:T, t in s+1:T   if t-s <= U[i]) +
+    sum(big_const*x[i, s, t] for i in Components, s in 0:T, t in s+1:T+1 if t-s >  U[i]) +
     sum(d[t]*z[t] for t in 1:T))
 
   ReplaceOnlyAtMaintenance = @constraint(m,

@@ -9,7 +9,7 @@ using OffsetArrays
 
 arg = length(ARGS) > 0 ? ARGS[1] : ""
 
-if arg == "1a" || startswith(arg, "2")
+if arg == "1a" || startswith(arg, "2") || startswith(arg, "3")
     include("as_dat_large.jl")
 else
     include("as_dat_small.jl")
@@ -50,6 +50,28 @@ function plot_x(x, i)
     scatter(cols, rows)
     println("x_val_$(arg)_$(i).png")
     savefig("x_val_$(arg)_$(i).png")
+end
+
+function plot_x_model3(x, T)
+    xs = Int[]
+    ys = Int[]
+    for i in Components, s in 0:T, t in 1:T+1
+        
+        x_val = value(x[i, s, t])
+        if x_val != 0
+            println(x[i, s, t])
+            println(value(x[i, s, t]))
+            push!(xs, t)
+            push!(ys, i)
+        end
+    end
+    
+    # xx = sum(value.(x; dims=3))
+    # x_val = sparse(xx)
+    # rows, cols = findnz(x_val)
+    scatter(xs, ys, legend=:none)
+    mkpath("out/$(arg)")
+    savefig("out/$(arg)/x_val_$(T).png")
 end
     
 if startswith(arg, "1")
@@ -128,7 +150,10 @@ elseif startswith(arg, "2") || startswith(arg, "3")
     t_vals = Float64[]
     T_range = (arg == "2b" || arg == "3b") ? (50:10:700) : (50:5:200)
     if arg == "3a"
-        T_range = (50:5:400)
+        T_range = (50:5:200)
+    end
+    if arg == "3b"
+        T_range = (50:5:200)
     end
     
     # Sava times to file whilst doing the calculations
@@ -161,6 +186,11 @@ elseif startswith(arg, "2") || startswith(arg, "3")
 
             # Print to file
             @printf(io, "%.2f, %.2f\n", T_val, time_i)
+
+            if startswith(arg, "3") && T%50 == 0
+                plot_x_model3(x, T)
+            end
+                
         end
     end # open(...)
     # Save plot to a .png
