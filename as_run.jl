@@ -6,6 +6,7 @@ using SparseArrays
 using Plots
 using Printf
 using OffsetArrays
+using LaTeXStrings
 
 arg = length(ARGS) > 0 ? ARGS[1] : ""
 
@@ -52,41 +53,44 @@ function plot_x(x, i)
     savefig("x_val_$(arg)_$(i).png")
 end
 
-function fit_line(x, y, log_x=false, log_y=false)
-    x = log_x ? log.(T) : x
-    y = log_y ? log.(T_times) : y
+function fit_line(in_x, in_y, log_x=false, log_y=false)
+    x = log_x ? log.(in_x) : in_x
+    y = log_y ? log.(in_y) : in_y
     # 'Solve' s of As = y, using least squares
     A = [ones(length(x)) x]
     s = A \ y
-    return s # s[0] is intercept, s[1] is slope
+    return s # s[1] is intercept, s[2] is slope
 end
 
-function line_function_to_str(s, x_name, log_x=false, log_y=false)
+function line_function_to_str(s, xname, log_x=false, log_y=false)
     if log_x
         if log_y
-            return "exp($(s[0])) * $(xname)^$(s[1])"
+            # return "$(exp(s[1])) * $(xname)^$(s[2])"
+            return @sprintf("%.8f * %s^%.4f", exp(s[1]), xname, s[2])
         else
-            return "$(s[0]) * $(xname) * log($(s[1]))"
+            return "$(s[1]) * $(xname) * log($(s[2]))"
         end
     else
         if log_y
-            return "exp($(s[0]) + $(xname) * $(s[1]))"
+            # return "exp($(s[1]) + $(xname) * $(s[2]))"
+            return @sprintf("%.8f * exp (%.4f * %s)", exp(s[1]), s[2], xname)
         else
-            return "$(s[0]) + $(xname) * $(s[1])"
+            return "$(s[1]) + $(xname) * $(s[2])"
         end
     end
 end
 
-function predict_line(x, s, log_x=false, log_y=false)
-    xx = log_x ? exp.(x) : x
-    y = s[0] + s[1]*xx
+function predict_line(in_x, s, log_x=false, log_y=false)
+    x = log_x ? log.(in_x) : in_x
+    y = s[1] .+ s[2]*x
     yy = log_y ? exp.(y) : y
     return yy
 end
 
 function plot_line(x, s, log_x=false, log_y=false)
     y = predict_line(x, s, log_x, log_y)
-    plot!(x, y, label="interp=$(s[0]), slope=$(s[1])")
+    label = line_function_to_str(s, "T", log_x, log_y)
+    plot!(x, y, label=label)
 end
 
 function fit_and_plot_line(x, y, log_x=false, log_y=false)
@@ -196,11 +200,13 @@ elseif startswith(arg, "2") || startswith(arg, "3")
     t_vals = Float64[]
     T_range = (arg == "2b" || arg == "3b") ? (50:10:700) : (50:5:200)
     if arg == "3a"
-        T_range = (50:25:200)
+        T_range = (50:25:100)
     end
     if arg == "3b"
-        T_range = (50:25:200)
+        T_range = (50:25:100)
     end
+    log_x = false
+    log_y = true
     
     # Sava times to file whilst doing the calculations
     open("$(arg)_time_data.txt", "w") do io
@@ -214,7 +220,7 @@ elseif startswith(arg, "2") || startswith(arg, "3")
             # Build model and optimize
             global m, x, z = build_model(;relax_x=false, relax_z=false)
             set_optimizer(m, Gurobi.Optimizer)
-            set_optimizer_attributes(m, "MIPGap" => 2e-2, "TimeLimit" => 3600)
+            set_optimizer_attributes(m, "MIPGap" => 2e-1, "TimeLimit" => 7200)
             set_silent(m)
             unset_binary.(x)
             if arg == "2b"
@@ -240,7 +246,13 @@ elseif startswith(arg, "2") || startswith(arg, "3")
         end
     end # open(...)
     # Save plot to a .png
-    plot(T_range, t_vals, xlabel="T", ylabel="Time (s)", show=true, yscale=:log10, legend=:none)
+    if arg == "2b"
+        plot(T_range, t_vals, xlabel="T", ylabel="Time (s)", show=true, yscale=:log10, xscale=:log10, label="Calculation time", legend=:topleft)#, legend=:none)
+        fit_and_plot_line(T_range, t_vals, arg == "2b" ? true : log_x, log_y)
+        savefig("$(arg)_time_log_log.png")
+    end
+    plot(T_range, t_vals, xlabel="T", ylabel="Time (s)", show=true, yscale=:log10, label="Calculation time", legend=:topleft)#, legend=:none)
+    fit_and_plot_line(T_range, t_vals, arg == "2b" ? true : log_x, log_y)
     savefig("$(arg)_time.png")
 else
     global m, x, z = build_model(;relax_x=false, relax_z=false)
