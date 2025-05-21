@@ -5,6 +5,7 @@ using Gurobi
 using SparseArrays
 using Plots
 using Printf
+using OffsetArrays
 
 arg = length(ARGS) > 0 ? ARGS[1] : ""
 
