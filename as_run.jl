@@ -227,7 +227,7 @@ elseif startswith(arg, "2") || startswith(arg, "3")
             # Build model and optimize
             global m, x, z = build_model(;relax_x=false, relax_z=false)
             set_optimizer(m, Gurobi.Optimizer)
-            set_optimizer_attributes(m, "MIPGap" => 4e-2, "TimeLimit" => 7200)
+            set_optimizer_attributes(m, "MIPGap" => 8e-2, "TimeLimit" => 7200)
             set_silent(m)
             unset_binary.(x)
             if arg == "2b"
