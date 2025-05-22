@@ -204,13 +204,13 @@ if startswith(arg, "1")
 elseif startswith(arg, "2") || startswith(arg, "3")
     println("### $(arg)")
     t_vals = Float64[]
-    T_range = 50:50:2000
-    # T_range = (arg == "2b" || arg == "3b") ? (50:25:1000) : (50:25:1000)
+    # T_range = 50:50:2000
+    T_range = (arg == "2b") ? (50:25:700) : (50:25:200)
     if arg == "3a"
-        T_range = (50:50:1000)
+        T_range = (50:50:200)
     end
     if arg == "3b"
-        T_range = (50:50:1000)
+        T_range = (50:50:200)
     end
     log_x = false
     log_y = true
@@ -227,7 +227,7 @@ elseif startswith(arg, "2") || startswith(arg, "3")
             # Build model and optimize
             global m, x, z = build_model(;relax_x=false, relax_z=false)
             set_optimizer(m, Gurobi.Optimizer)
-            set_optimizer_attributes(m, "MIPGap" => 5e-1, "TimeLimit" => 7200)
+            set_optimizer_attributes(m, "MIPGap" => 4e-2, "TimeLimit" => 7200)
             set_silent(m)
             unset_binary.(x)
             if arg == "2b"
