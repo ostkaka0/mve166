@@ -45,13 +45,7 @@ end
 # complete list of valid parameters
 # """
 
-function plot_x(x, i)
-    x_val = sparse(value.(x.data))
-    rows, cols = findnz(x_val)
-    scatter(cols, rows)
-    println("x_val_$(arg)_$(i).png")
-    savefig("x_val_$(arg)_$(i).png")
-end
+
 
 function fit_line(in_x, in_y, log_x=false, log_y=false)
     x = log_x ? log.(in_x) : in_x
@@ -98,6 +92,18 @@ function fit_and_plot_line(x, y, log_x=false, log_y=false)
     plot_line(x, s, log_x, log_y)
 end
 
+function plot_model(m, x, z, T)
+    x_val = sparse(value.(x.data))
+    ys, xs = findnz(x_val)
+    cost = objective_value(m)
+    ymin = floor(Int, minimum(ys))
+    ymax = ceil(Int, maximum(ys))
+    yticks = ymin:ymax
+    scatter(xs, ys, legend=:none, title="cost=$(cost)", xlabel="T", ylabel="Component", yticks=yticks, xlims = (0, T))
+    mkpath("out/$(arg)")
+    savefig("out/$(arg)/x_val_$(T).png")
+end
+
 function plot_model3(m, x, z, T)
     xs = Int[]
     ys = Int[]
@@ -140,14 +146,14 @@ if startswith(arg, "1")
         optimize!(m)
         obj_i = objective_value(m)
         time_i = solve_time(m)
-        plot_x(x, 1)
+        plot_model(m, x, z, 1)
     
         println("### 1a (ii)")
         unset_binary.(x)
         optimize!(m)
         obj_ii = objective_value(m)
         time_ii = solve_time(m)
-        plot_x(x, 2)
+        plot_model(m, x, z, 2)
     
         println("### 1a (iii)")
         # unset_binary.(x)
@@ -155,7 +161,7 @@ if startswith(arg, "1")
         optimize!(m)
         obj_iii = objective_value(m)
         time_iii = solve_time(m)
-        plot_x(x, 3)
+        plot_model(m, x, z, 3)
     
         println("time_i = $time_i")
         println("time_ii = $time_ii")
@@ -169,7 +175,7 @@ if startswith(arg, "1")
         optimize!(m)
         obj_i = objective_value(m)
         time_i = solve_time(m)
-        plot_x(x, 1)
+        plot_model(m, x, z, 1)
     
         println("### 1b (ii)")
         unset_binary.(x)
@@ -177,14 +183,14 @@ if startswith(arg, "1")
         optimize!(m)
         obj_ii = objective_value(m)
         time_ii = solve_time(m)
-        plot_x(x, 2)
+        plot_model(m, x, z, 2)
     
         println("### 1b (iii)")
         add_cut_to_small(m)
         optimize!(m)
         obj_iii = objective_value(m)
         time_iii = solve_time(m)
-        plot_x(x, 3)
+        plot_model(m, x, z, 3)
 
         println("time_i = $time_i")
         println("time_ii = $time_ii")
@@ -198,7 +204,8 @@ if startswith(arg, "1")
 elseif startswith(arg, "2") || startswith(arg, "3")
     println("### $(arg)")
     t_vals = Float64[]
-    T_range = (arg == "2b" || arg == "3b") ? (50:25:1000) : (50:25:1000)
+    T_range = 50:50:2000
+    # T_range = (arg == "2b" || arg == "3b") ? (50:25:1000) : (50:25:1000)
     if arg == "3a"
         T_range = (50:50:1000)
     end
@@ -241,6 +248,8 @@ elseif startswith(arg, "2") || startswith(arg, "3")
 
             if startswith(arg, "3") && T%50 == 0
                 plot_model3(m, x, z, T)
+            else
+                plot_model(m, x, z, T)
             end
                 
         end
