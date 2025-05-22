@@ -198,12 +198,12 @@ if startswith(arg, "1")
 elseif startswith(arg, "2") || startswith(arg, "3")
     println("### $(arg)")
     t_vals = Float64[]
-    T_range = (arg == "2b" || arg == "3b") ? (50:10:700) : (50:5:200)
+    T_range = (arg == "2b" || arg == "3b") ? (50:25:1000) : (50:25:1000)
     if arg == "3a"
-        T_range = (50:25:100)
+        T_range = (50:50:1000)
     end
     if arg == "3b"
-        T_range = (50:25:100)
+        T_range = (50:50:1000)
     end
     log_x = false
     log_y = true
@@ -220,7 +220,7 @@ elseif startswith(arg, "2") || startswith(arg, "3")
             # Build model and optimize
             global m, x, z = build_model(;relax_x=false, relax_z=false)
             set_optimizer(m, Gurobi.Optimizer)
-            set_optimizer_attributes(m, "MIPGap" => 2e-1, "TimeLimit" => 7200)
+            set_optimizer_attributes(m, "MIPGap" => 5e-1, "TimeLimit" => 7200)
             set_silent(m)
             unset_binary.(x)
             if arg == "2b"
@@ -246,13 +246,13 @@ elseif startswith(arg, "2") || startswith(arg, "3")
         end
     end # open(...)
     # Save plot to a .png
-    if arg == "2b"
+    if arg == "2b" || true
         plot(T_range, t_vals, xlabel="T", ylabel="Time (s)", show=true, yscale=:log10, xscale=:log10, label="Calculation time", legend=:topleft)#, legend=:none)
-        fit_and_plot_line(T_range, t_vals, arg == "2b" ? true : log_x, log_y)
+        fit_and_plot_line(T_range, t_vals, true || arg == "2b" ? true : log_x, log_y)
         savefig("$(arg)_time_log_log.png")
     end
     plot(T_range, t_vals, xlabel="T", ylabel="Time (s)", show=true, yscale=:log10, label="Calculation time", legend=:topleft)#, legend=:none)
-    fit_and_plot_line(T_range, t_vals, arg == "2b" ? true : log_x, log_y)
+    fit_and_plot_line(T_range, t_vals, true || arg == "2b" || startswith(arg, "3") ? true : log_x, log_y)
     savefig("$(arg)_time.png")
 else
     global m, x, z = build_model(;relax_x=false, relax_z=false)
