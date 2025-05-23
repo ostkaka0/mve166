@@ -99,7 +99,7 @@ function plot_model(m, x, z, T)
     ymin = floor(Int, minimum(ys))
     ymax = ceil(Int, maximum(ys))
     yticks = ymin:ymax
-    scatter(xs, ys, legend=:none, title="cost=$(cost)", xlabel="T", ylabel="Component", yticks=yticks, xlims = (0, T))
+    scatter(xs, ys, legend=:none, title="cost=$(cost), T=$(T)", xlabel="Time t", ylabel="Component", yticks=yticks, xlims = (0, T))
     mkpath("out/$(arg)")
     savefig("out/$(arg)/x_val_$(T).png")
 end
@@ -125,7 +125,7 @@ function plot_model3(m, x, z, T)
     ymin = floor(Int, minimum(ys))
     ymax = ceil(Int, maximum(ys))
     yticks = ymin:ymax
-    scatter(xs, ys, legend=:none, title="cost=$(cost)", xlabel="T", ylabel="Component", yticks=yticks, xlims = (0, T))
+    scatter(xs, ys, legend=:none, title="cost=$(cost), T=$(T)", xlabel="Time t", ylabel="Component", yticks=yticks, xlims = (0, T))
     mkpath("out/$(arg)")
     savefig("out/$(arg)/x_val_$(T).png")
 end
@@ -205,12 +205,12 @@ elseif startswith(arg, "2") || startswith(arg, "3")
     println("### $(arg)")
     t_vals = Float64[]
     # T_range = 50:50:2000
-    T_range = (arg == "2b") ? (50:25:700) : (50:25:200)
+    T_range = (arg == "2b") ? (50:10:700) : (50:10:200)
     if arg == "3a"
-        T_range = (50:50:200)
+        T_range = (50:10:150)
     end
     if arg == "3b"
-        T_range = (50:50:200)
+        T_range = (50:10:150)
     end
     log_x = false
     log_y = true
@@ -227,7 +227,7 @@ elseif startswith(arg, "2") || startswith(arg, "3")
             # Build model and optimize
             global m, x, z = build_model(;relax_x=false, relax_z=false)
             set_optimizer(m, Gurobi.Optimizer)
-            set_optimizer_attributes(m, "MIPGap" => 8e-2, "TimeLimit" => 7200)
+            set_optimizer_attributes(m, "MIPGap" => 4e-2, "TimeLimit" => 7200)
             set_silent(m)
             unset_binary.(x)
             if arg == "2b"
@@ -246,10 +246,12 @@ elseif startswith(arg, "2") || startswith(arg, "3")
             # Print to file
             @printf(io, "%.2f, %.2f\n", T_val, time_i)
 
-            if startswith(arg, "3") && T%50 == 0
-                plot_model3(m, x, z, T)
-            else
-                plot_model(m, x, z, T)
+            if T%50 == 0
+                if startswith(arg, "3")
+                    plot_model3(m, x, z, T)
+                else
+                    plot_model(m, x, z, T)
+                end
             end
                 
         end
@@ -257,11 +259,11 @@ elseif startswith(arg, "2") || startswith(arg, "3")
     # Save plot to a .png
     if arg == "2b" || true
         plot(T_range, t_vals, xlabel="T", ylabel="Time (s)", show=true, yscale=:log10, xscale=:log10, label="Calculation time", legend=:topleft)#, legend=:none)
-        fit_and_plot_line(T_range, t_vals, true || arg == "2b" ? true : log_x, log_y)
+        fit_and_plot_line(T_range, t_vals, true, log_y)
         savefig("$(arg)_time_log_log.png")
     end
     plot(T_range, t_vals, xlabel="T", ylabel="Time (s)", show=true, yscale=:log10, label="Calculation time", legend=:topleft)#, legend=:none)
-    fit_and_plot_line(T_range, t_vals, true || arg == "2b" || startswith(arg, "3") ? true : log_x, log_y)
+    fit_and_plot_line(T_range, t_vals, false, log_y)
     savefig("$(arg)_time.png")
 else
     global m, x, z = build_model(;relax_x=false, relax_z=false)
